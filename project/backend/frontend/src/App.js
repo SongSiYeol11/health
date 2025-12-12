@@ -7,9 +7,9 @@ function App() {
 
   // 더미데이터 (임시 랭킹)
   const dummyData = [
-    { name: "민수", time: 10.5 },
-    { name: "철수", time: 15.1 },
-    { name: "영희", time: 13.8 }
+    { name: "민수", time:Math.floor((Math.random() * 10 + 10) * 10) / 10 }, // 10~20 사이의 랜덤 값
+    { name: "철수", time: Math.floor((Math.random() * 10 + 10) * 10) / 10  },
+    { name: "영희", time: Math.floor((Math.random() * 10 + 10) * 10) / 10 } ,
   ];
 
   // 전체 순위 (나 포함)
