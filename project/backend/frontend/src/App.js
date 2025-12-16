@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabase/client";
 import "./App.css";
 
 function App() {
@@ -13,35 +14,63 @@ function App() {
     { name: "영희", time: Math.floor((Math.random() * 10 + 10) * 10) / 10 },
   ];
 
-  // 순위 계산 + localStorage 저장
-  const calculateRanking = () => {
-    if (!myTime) return;
+  const calculateRanking = async () => {
+  if (!myTime) return;
 
-    const myRecord = { name: "나", time: Number(myTime), date: new Date().toLocaleString() };
-    const newList = [...dummyData, myRecord].sort((a, b) => a.time - b.time);
-    setRanking(newList);
-
-    // 내 기록 리스트 업데이트
-    const updatedRecords = [...myRecords, myRecord];
-    setMyRecords(updatedRecords);
-
-    // localStorage 저장
-    localStorage.setItem("myRecord", JSON.stringify(updatedRecords));
+  const myRecord = {
+    name: "나",
+    time: Number(myTime),
   };
+
+  // Supabase에 insert
+  const { data, error } = await supabase
+    .from("records")      // 테이블 이름
+    .insert([myRecord]);
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+    return;
+  }
+
+  // 전체 순위 가져오기
+  const { data: allRecords, error: fetchError } = await supabase
+    .from("records")
+    .select("*")
+    .order("time", { ascending: true });
+
+  if (fetchError) {
+    console.error("Supabase fetch error:", fetchError);
+    return;
+  }
+
+  setRanking(allRecords);
+  setMyRecords(allRecords); // 내 기록 리스트 갱신
+};
+
 
   // 처음 로드 시 localStorage에서 기록 불러오기
   useEffect(() => {
-    const saved = localStorage.getItem("myRecord");
-    if (saved) {
-      const records = JSON.parse(saved);
-      setMyRecords(records);
+  const fetchRecords = async () => {
+    const { data, error } = await supabase
+      .from("records")
+      .select("*")
+      .order("time", { ascending: true });
 
-      // 마지막 기록 불러오기
-      if (records.length > 0) {
-        setMyTime(records[records.length - 1].time);
-      }
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return;
     }
-  }, []); // 빈 배열: 처음 한 번만 실행
+
+    setRanking(data);
+    setMyRecords(data);
+
+    if (data.length > 0) {
+      setMyTime(data[data.length - 1].time);
+    }
+  };
+
+  fetchRecords();
+}, []);
 
   return (
     <div className="container">
