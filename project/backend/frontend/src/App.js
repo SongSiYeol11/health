@@ -3,74 +3,63 @@ import { supabase } from "./supabase/client";
 import "./App.css";
 
 function App() {
-  const [myTime, setMyTime] = useState(""); // 입력값
-  const [ranking, setRanking] = useState([]); // 전체 순위
-  const [myRecords, setMyRecords] = useState([]); // 내 기록 리스트
-
-  // 더미데이터
-  const dummyData = [
-    { name: "민수", time: Math.floor((Math.random() * 10 + 10) * 10) / 10 },
-    { name: "철수", time: Math.floor((Math.random() * 10 + 10) * 10) / 10 },
-    { name: "영희", time: Math.floor((Math.random() * 10 + 10) * 10) / 10 },
-  ];
+  const [myTime, setMyTime] = useState("");
+  const [ranking, setRanking] = useState([]);
+  const [myRecords, setMyRecords] = useState([]);
 
   const calculateRanking = async () => {
-  if (!myTime) return;
+    if (!myTime) return;
 
-  const myRecord = {
-    name: "나",
-    time: Number(myTime),
-  };
+    const myRecord = {
+      name: "나",
+      time: Number(myTime),
+    };
 
-  // Supabase에 insert
-  const { data, error } = await supabase
-    .from("records")      // 테이블 이름
-    .insert([myRecord]);
+    const { error } = await supabase
+      .from("records")
+      .insert([myRecord]);
 
-  if (error) {
-    console.error("Supabase insert error:", error);
-    return;
-  }
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return;
+    }
 
-  // 전체 순위 가져오기
-  const { data: allRecords, error: fetchError } = await supabase
-    .from("records")
-    .select("*")
-    .order("time", { ascending: true });
-
-  if (fetchError) {
-    console.error("Supabase fetch error:", fetchError);
-    return;
-  }
-
-  setRanking(allRecords);
-  setMyRecords(allRecords); // 내 기록 리스트 갱신
-};
-
-
-  // 처음 로드 시 localStorage에서 기록 불러오기
-  useEffect(() => {
-  const fetchRecords = async () => {
-    const { data, error } = await supabase
+    const { data: allRecords, error: fetchError } = await supabase
       .from("records")
       .select("*")
       .order("time", { ascending: true });
 
-    if (error) {
-      console.error("Supabase fetch error:", error);
+    if (fetchError) {
+      console.error("Supabase fetch error:", fetchError);
       return;
     }
 
-    setRanking(data);
-    setMyRecords(data);
-
-    if (data.length > 0) {
-      setMyTime(data[data.length - 1].time);
-    }
+    setRanking(allRecords);
+    setMyRecords(allRecords);
   };
 
-  fetchRecords();
-}, []);
+  useEffect(() => {
+    const fetchRecords = async () => {
+      const { data, error } = await supabase
+        .from("records")
+        .select("*")
+        .order("time", { ascending: true });
+
+      if (error) {
+        console.error("Supabase fetch error:", error);
+        return;
+      }
+
+      setRanking(data);
+      setMyRecords(data);
+
+      if (data.length > 0) {
+        setMyTime(data[data.length - 1].time);
+      }
+    };
+
+    fetchRecords();
+  }, []);
 
   return (
     <div className="container">
@@ -106,7 +95,7 @@ function App() {
           <ul>
             {myRecords.map((r, i) => (
               <li key={i}>
-                {r.date} — {r.time}분
+                {r.date ? r.date : "날짜 없음"} — {r.time}분
               </li>
             ))}
           </ul>
